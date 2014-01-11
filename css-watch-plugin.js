@@ -4,9 +4,59 @@
   var watcher = {}
   var items = []
   var interval = null
-  var time = 1000
+  var TIME = 1000
 
-	function Item ($dom, properties, callback) {
+  // methods
+  methods.watch = function(properties, callback, isExtend) {
+    if (isExtend == null) {
+      isExtend = false
+    }
+    $dom = this
+    if (item = checkIsInItems($dom)) {
+      // if is not extend, watching properties will be reset
+      if (isExtend) {
+        item.extendProperties(properties)
+      } else {
+        item.watchingProps = properties
+      }
+      if (callback) {
+        item.callback = callback
+      }
+    } else {
+      newItem = new Item($dom, properties, callback)
+      items.push(newItem)
+    }
+  }
+
+ methods.unwatch = function(properties) {
+    $dom = this
+    if (item = checkIsInItems($dom)) {
+      if(!properties || properties === '*') {
+        items.splice(items.indexOf(item))
+      }
+    }
+  }
+
+  // watcher apo
+  watcher.runs = function(time) {
+    intervalCheck(time)
+  }
+  watcher.stop = function() {
+    clearInterval(interval)
+  }
+  watcher.reset = function() {
+    items = []
+  }
+
+  function intervalCheck(time) {
+    if (time == null) {
+      time = TIME
+    }
+    clearInterval(interval)
+    interval = setInterval(checkItemsProps, time)
+  }
+
+  function Item ($dom, properties, callback) {
     this.node = $dom
     this.watchingProps = properties
     this.values = {}
@@ -30,7 +80,6 @@
       if ( oldValue = that.values[prop]) {
         if ( !checkIsEqual(oldValue, newValue) ) {
           that.values[prop] = newValue
-          console.log(that.values[prop])
           isChanged = true
         }
       } else {
@@ -38,44 +87,6 @@
       }
     })
     return isChanged
-  }
-
-  // methods
-  methods.watch = function(properties, callback) {
-    $dom = this
-    if (item = checkIfInArray($dom)) {
-      item.extendProperties(properties)
-      if (callback) {
-        item.callback = callback
-      }
-    } else {
-      newItem = new Item($dom, properties, callback)
-      items.push(newItem)
-    }
-  }
-
- methods.unwatch = function(properties) {
-    console.log(items)
-    if (item = checkIfInArray($dom)) {
-      if(!properties || properties === '*') {
-        items.splice(items.indexOf(item))
-      }
-    }
-    console.log(items)
-  }
-  // watcher
-  watcher.runs = function() {
-    intervalCheck()
-  }
-  watcher.stop = function() {
-    clearInterval(interval)
-  }
-  watcher.reset = function() {
-    items = []
-  }
-
-  function intervalCheck() {
-    interval = setInterval(checkItemsProps, time)
   }
 
   function checkIsEqual(value1, value2) {
@@ -102,7 +113,7 @@
     })
   }
 
-  function checkIfInArray($dom) {
+  function checkIsInItems($dom) {
     var foundItem = null
     $.each(items, function(index, item){
       if (item.node[0] === $dom[0]) {
